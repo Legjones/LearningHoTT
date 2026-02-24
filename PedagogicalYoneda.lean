@@ -1,10 +1,10 @@
 --Categories...
-/-TODO: Redo the following definition of cat so that we actually worry about universes...
-Seem to need to do something like this to talk about our example of Set, even just to talk
-about the Yoneda lemma...-/
+
+universe u v
+
 structure Cat where
-  (Obj : Type)
-  (Hom : Obj → Obj → Type)
+  (Obj : Type u)
+  (Hom : Obj → Obj → Type v)
   (id  : ∀ X, Hom X X)
   (comp : ∀ {X Y Z}, Hom X Y → Hom Y Z → Hom X Z)
   (id_comp : ∀ {X Y} (f : Hom X Y), comp (id X) f = f)
@@ -12,6 +12,7 @@ structure Cat where
   (assoc : ∀ {W X Y Z}
     (f : Hom W X) (g : Hom X Y) (h : Hom Y Z),
     comp (comp f g) h = comp f (comp g h))
+
 
 --Domain and codomain...
 def dom : (C : Cat) →  (X Y : C.Obj) → (f : C.Hom X Y) → C.Obj :=  fun _ X _ _ => X
@@ -23,10 +24,10 @@ structure Fun (C D :Cat) where
   (Fobj : C.Obj → D.Obj)
   (Fmor : ∀ {X Y: C.Obj}, C.Hom X Y → D.Hom (Fobj X) (Fobj Y))
   (Fcomp : ∀ {X Y Z : C.Obj} (g: C.Hom X Y) (f: C.Hom Y Z), Fmor (C.comp g f) = D.comp (Fmor g) (Fmor f)) --Compatibility with composition
-  (Fid : ∀ {X : C.Obj}, Fmor (C.id X) = D.id (Fobj X))
+  (Fid : ∀ {X : C.Obj}, Fmor (C.id X) = D.id (Fobj X)) --Compatibility with identity
 
 --Composition of functors (is a functor)
-def FunComp (C D E : Cat) (G : Fun D E) (F : Fun C D): Fun C E:=
+def FunComp {C D E : Cat} (G : Fun D E) (F : Fun C D): Fun C E:=
   {
     Fobj := fun c => G.Fobj (F.Fobj c)
     Fmor := fun f => G.Fmor (F.Fmor f)
@@ -42,22 +43,67 @@ def FunComp (C D E : Cat) (G : Fun D E) (F : Fun C D): Fun C E:=
 
 --Natural transformations
 structure Natt (F G : Fun C D) where
-  (Legs : ∀ {X: C.Obj}, D.Hom (F.Fobj X) (G.Fobj X))
-  (Comm : ∀ {X Y : C.Obj} (f: C.Hom X Y), D.comp (F.Fmor f) (Legs) = D.comp (Legs) (G.Fmor f))
+  (Legs : ∀ (X: C.Obj), D.Hom (F.Fobj X) (G.Fobj X)) --Legs of the natural transformation
+  (Comm : ∀ {X Y : C.Obj} (f: C.Hom X Y), D.comp (F.Fmor f) (Legs Y) = D.comp (Legs X) (G.Fmor f)) --The necessary commuting diagram(s)
 
-universe u
+
+--The identity natural transformation for a given functor
+def idNatt {C D : Cat} (F: Fun C D) : Natt F F :=
+{
+  Legs := fun X => D.id (F.Fobj X),
+  Comm := by
+          intro X Y F
+          rw [D.comp_id]
+          rw [D.id_comp]
+}
 
 --A model for the category of (small) sets (hopefully...)
 def SetCat : Cat :=
-{ Obj := Type,
+{
+  Obj := Type,
   Hom := fun X Y => X → Y,
   id  := fun X x => x,
   comp := fun f g x => g (f x),
   id_comp := by intros; rfl,
   comp_id := by intros; rfl,
-  assoc := by intros; rfl }
+  assoc := by intros; rfl
+}
 
-def Rep_cov {C : Cat} (A: C.Obj) : Fun C SetCat:=
+--Covariant representable functors (i.e. representable in the first coordinate)
+def Rep_cov {C: Cat} : C.Obj → Fun C SetCat :=
+  fun A : C.Obj =>
   {
-
+    Fobj:= fun X: C.Obj => C.Hom A X,
+    Fmor:= fun {X Y : C.Obj} (f : C.Hom X Y) (g : C.Hom A X) => C.comp g f
+    Fcomp := by
+          intros
+          simp only [SetCat, C.assoc]
+    Fid := by
+          intros
+          simp only [SetCat, C.comp_id]
   }
+
+
+--The construction of a natrual transformation from an element of F(A)
+def FA_to_natt {C: Cat} {F: Fun C SetCat}: (A : C.Obj) → (F.Fobj A) →  Natt (Rep_cov A) F :=
+  fun A : C.Obj => (fun (z : F.Fobj A) =>
+  {
+    Legs := fun X => (fun (g : (Rep_cov A).Fobj X) => (F.Fmor g) z),
+    Comm := by
+            intro X Y f
+            simp only [SetCat, Rep_cov, F.Fcomp]
+  })
+
+--The identtiy in Hom(A,A) for Rep_cov A, for ease of use later
+def id_HomAA {C : Cat} {A: C.Obj} := SetCat.id ((Rep_cov A).Fobj A)
+
+--The construction of an element of F(A) from a natural transformation
+def natt_to_FA {C: Cat} {F: Fun C SetCat}: (A: C.Obj) → Natt (Rep_cov A) F → (F.Fobj A) :=
+  fun A: C.Obj =>
+    (fun (η : Natt (Rep_cov A) F) => (η.Legs A) )
+
+--I am having a lot of trouble with something like the universe levels...
+
+/-My core issue is that (Rep_cov A).Fobj A is, by definition, just an object of SetCat. However,
+I want to recognize id_A, a morhpism in C, as an element of this object (a term of this type).
+-/
