@@ -42,9 +42,10 @@ def FunComp {C D E : Cat} (G : Fun D E) (F : Fun C D): Fun C E:=
   }
 
 --Natural transformations
+@[ext]
 structure Natt (F G : Fun C D) where
   (Legs : ∀ (X: C.Obj), D.Hom (F.Fobj X) (G.Fobj X)) --Legs of the natural transformation
-  (Comm : ∀ {X Y : C.Obj} (f: C.Hom X Y), D.comp (F.Fmor f) (Legs Y) = D.comp (Legs X) (G.Fmor f)) --The necessary commuting diagram(s)
+  (Comm : ∀ {X Y : C.Obj} (f: C.Hom X Y), D.comp (F.Fmor f) (Legs Y) = D.comp (Legs X) (G.Fmor f)) --The necessary commuting diagrams
 
 
 --The identity natural transformation for a given functor
@@ -70,6 +71,7 @@ def SetCat : Cat :=
 }
 
 --Covariant representable functors (i.e. representable in the first coordinate)
+@[simp]
 def Rep_cov {C: Cat} : C.Obj → Fun C SetCat :=
   fun A : C.Obj =>
   {
@@ -94,16 +96,23 @@ def FA_to_natt {C: Cat} {F: Fun C SetCat}: (A : C.Obj) → (F.Fobj A) →  Natt 
             simp only [SetCat, Rep_cov, F.Fcomp]
   })
 
---The identtiy in Hom(A,A) for Rep_cov A, for ease of use later
-def id_HomAA {C : Cat} {A: C.Obj} := SetCat.id ((Rep_cov A).Fobj A)
-
 --The construction of an element of F(A) from a natural transformation
 def natt_to_FA {C: Cat} {F: Fun C SetCat}: (A: C.Obj) → Natt (Rep_cov A) F → (F.Fobj A) :=
   fun A: C.Obj =>
-    (fun (η : Natt (Rep_cov A) F) => (η.Legs A) )
+    (fun (η : Natt (Rep_cov A) F) =>  (η.Legs A) (C.id A))
 
---I am having a lot of trouble with something like the universe levels...
+/-The above works... but feels a bit hacky, since I am seemingly depending on the
+unwrapping of things at the end step, and under the hood. I mean this specifically
+for the situation of the typing for identifying ((Rep_cov A).Fobj A) with (C.Hom A A).-/
 
-/-My core issue is that (Rep_cov A).Fobj A is, by definition, just an object of SetCat. However,
-I want to recognize id_A, a morhpism in C, as an element of this object (a term of this type).
--/
+--Below expresses that the composition of the above from natt to natt is the identity
+theorem Yoneda_ntn_id {C: Cat} (A: C.Obj) {F: Fun C SetCat} (η : Natt (Rep_cov A) F) :
+  (FA_to_natt A) ((natt_to_FA A) η) = η := by
+     ext
+     apply funext
+     simp only [FA_to_natt, natt_to_FA]
+     simp [η.Comm] --I feel like I'm going a bit crazy, because this is definitely
+     --the kind of thing I want to do (just use the fact that F(x) ∘ η_A(id_A) =
+     -- η_{cod(x)} ∘ (Rep_cov A) (id_A) = η_{cod(x)} ∘ id_A = η_{cod(x)}, in the first
+     -- part just expressing the naturality square). I've tried doing this a number of
+     -- different ways but all have failed...
