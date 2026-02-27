@@ -108,11 +108,15 @@ for the situation of the typing for identifying ((Rep_cov A).Fobj A) with (C.Hom
 --Below expresses that the composition of the above from natt to natt is the identity
 theorem Yoneda_ntn_id {C: Cat} (A: C.Obj) {F: Fun C SetCat} (η : Natt (Rep_cov A) F) :
   (FA_to_natt A) ((natt_to_FA A) η) = η := by
-     ext
-     apply funext
+     ext c
      simp only [FA_to_natt, natt_to_FA]
-     simp [η.Comm] --I feel like I'm going a bit crazy, because this is definitely
-     --the kind of thing I want to do (just use the fact that F(x) ∘ η_A(id_A) =
-     -- η_{cod(x)} ∘ (Rep_cov A) (id_A) = η_{cod(x)} ∘ id_A = η_{cod(x)}, in the first
-     -- part just expressing the naturality square). I've tried doing this a number of
-     -- different ways but all have failed...
+     funext g
+     have h := η.Comm g
+     simp only [SetCat, Rep_cov] at h
+     have h_applied := congrFun h (C.id A)
+     simp only [C.id_comp] at h_applied
+     exact h_applied.symm
+
+--Below expresses that the composition of the above from FA to FA is the identity
+theorem Yoneda_iti_id {C: Cat} (A:C.Obj) {F: Fun C SetCat} (η: Natt (Rep_cov A) F) :
+  ((natt_to_FA) η) (FA_to_natt A a) = a := by
