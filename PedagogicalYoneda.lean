@@ -118,5 +118,36 @@ theorem Yoneda_ntn_id {C: Cat} (A: C.Obj) {F: Fun C SetCat} (η : Natt (Rep_cov 
      exact h_applied.symm
 
 --Below expresses that the composition of the above from FA to FA is the identity
-theorem Yoneda_iti_id {C: Cat} (A:C.Obj) {F: Fun C SetCat} (η: Natt (Rep_cov A) F) :
-  ((natt_to_FA) η) (FA_to_natt A a) = a := by
+theorem Yoneda_iti_id {C: Cat} (A:C.Obj) {F: Fun C SetCat} (a: F.Fobj A):
+  ((natt_to_FA) A) (FA_to_natt A a) = a := by
+  simp only [FA_to_natt, natt_to_FA]
+  rw [F.Fid]
+  simp only [SetCat]
+
+
+/-We want to express naturality of our above assignments, in A, but to do so
+it seems best to introduce some notation for operations on natural transformations
+which is what we do here.-/
+def f_on_eta {C: Cat} {F: Fun C SetCat} {A B : C.Obj} (f : C.Hom A B) (η: Natt (Rep_cov A) F): Natt (Rep_cov B) F :=
+{
+  Legs := by
+          intro X
+          simp only [SetCat, Rep_cov]
+          have h := η.Legs X
+          simp only [SetCat, Rep_cov] at h
+          exact fun g => h (C.comp f g) --Essentially we just precompose with f
+  Comm := by
+          intro X Y g
+          simp only [SetCat, Rep_cov]
+          dsimp
+          simp only [← C.assoc]
+          have e := η.Comm g
+          simp only [SetCat, Rep_cov] at e
+          have f_pre : C.Hom B X → C.Hom A X := fun y => C.comp f y
+          have fin := congrFun e f_pre
+}
+
+
+
+theorem nat_in_A_FA {C: Cat} {F: Fun C SetCat} {A B :C.Obj} {g : C.Hom A B}:
+  FA_to_natt
