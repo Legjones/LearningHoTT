@@ -13,13 +13,7 @@ structure Cat where
     (f : Hom W X) (g : Hom X Y) (h : Hom Y Z),
     comp (comp f g) h = comp f (comp g h))
 
-
---Domain and codomain...
-def dom : (C : Cat) →  (X Y : C.Obj) → (f : C.Hom X Y) → C.Obj :=  fun _ X _ _ => X
-
-def cod : (C: Cat) → (X Y : C.Obj) → (f: C.Hom X Y) → C.Obj := fun _ _ Y _ => Y
-
---(Covariant) Functors...
+--(Covariant) Functors
 structure Fun (C D :Cat) where
   (Fobj : C.Obj → D.Obj)
   (Fmor : ∀ {X Y: C.Obj}, C.Hom X Y → D.Hom (Fobj X) (Fobj Y))
@@ -141,13 +135,44 @@ def f_on_eta {C: Cat} {F: Fun C SetCat} {A B : C.Obj} (f : C.Hom A B) (η: Natt 
           simp only [SetCat, Rep_cov]
           dsimp
           simp only [← C.assoc]
+          funext z --The goal is now essentially just naturality of η, precomposing our input z with f
           have e := η.Comm g
           simp only [SetCat, Rep_cov] at e
-          have f_pre : C.Hom B X → C.Hom A X := fun y => C.comp f y
-          have fin := congrFun e f_pre
+          have fin := congrFun e (C.comp f z)
+          exact fin
 }
 
+/-The following expresses naturality in A, with the LHS describing the
+"right then down" of the commuting square:
+   F(A) → η
+F(f) |    | (precomp with f)
+     v    v
+   F(B) → γ
+-/
+theorem nat_in_A_FA {C: Cat} {F: Fun C SetCat} {A B :C.Obj} {a : F.Fobj A} (f : C.Hom A B):
+   (f_on_eta f) (FA_to_natt A a) = (FA_to_natt B) ((F.Fmor f) a) := by
+   ext c
+   simp only [FA_to_natt, f_on_eta]
+   simp only [F.Fcomp]
+   simp only [SetCat]
+   rfl
 
 
-theorem nat_in_A_FA {C: Cat} {F: Fun C SetCat} {A B :C.Obj} {g : C.Hom A B}:
-  FA_to_natt
+/-The following is expressing that if we have some diagram of the form
+· → · → ·
+|   |   |
+v   v   v
+· → · → ·
+Where the left square commutes and the outer rectangle commutes and the
+horizontals are isomoprhisms, then the right square commutes. This is one
+way to more conceptually approach proving naturality of our other assignment
+after we have the previous theorem.-/
+
+lemma 2_of_3_squares
+
+
+/-The following expresses naturality in A of the assignment in the other
+direction to the above, still expressible using the construction we defined
+earlier on our natural transformations, f_on_eta. Our LHS is going left then
+down in the diagram corresponding to the previous one. -/
+theorem nat_in_A_nattFA {C: Cat} {F: Fun C SetCat} {A B : C.Obj} (f : C.Hom A B) (η : Natt (Rep_cov A) F) :
