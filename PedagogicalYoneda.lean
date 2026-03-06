@@ -1,6 +1,6 @@
 --Categories...
 
-universe u v
+universe u v s
 
 structure Cat where
   (Obj : Type u)
@@ -163,16 +163,49 @@ theorem nat_in_A_FA {C: Cat} {F: Fun C SetCat} {A B :C.Obj} {a : F.Fobj A} (f : 
 |   |   |
 v   v   v
 · → · → ·
-Where the left square commutes and the outer rectangle commutes and the
+Where the left square commutes and the outer rectangle commutes and the top
 horizontals are isomoprhisms, then the right square commutes. This is one
 way to more conceptually approach proving naturality of our other assignment
-after we have the previous theorem.-/
+after we have the previous theorem.
 
-lemma 2_of_3_squares
+Note also that our explicit assumptions below are just that the outer rectangle
+commutes, co, our inner left square commutes, ci, and the reverse composition of our
+top two morphisms is the identity, i.e. this pair forms a split epimorphism.-/
+
+theorem two_of_three_squares_hisos {X_1 Y_1 : Type u} {X_2 Y_2 : Type v} (f_1 : X_1 → Y_1) (g_1 : Y_1 → X_1) {f_2 : X_2 → Y_2} {g_2 : Y_2 → X_2} (v_1 : X_1 → X_2) {v_2 : Y_1 → Y_2}
+(co :(v_1 ∘ g_1 ∘ f_1) = (g_2 ∘ f_2 ∘  v_1)) (ci : v_2 ∘ f_1 = f_2 ∘ v_1) (id_t : f_1 ∘ g_1 = (fun x =>x)) :
+v_1 ∘ g_1 = g_2 ∘ v_2 := by
+  funext z
+  have l := congrFun co (g_1 z)
+  dsimp at l
+  have h := congrFun id_t z
+  dsimp at h
+  rw [h] at l
+  have j := congrFun ci (g_1 z)
+  dsimp at j
+  rw [← j] at l
+  have k := congrFun id_t z
+  dsimp at k
+  rw [k] at l
+  exact l
 
 
-/-The following expresses naturality in A of the assignment in the other
-direction to the above, still expressible using the construction we defined
-earlier on our natural transformations, f_on_eta. Our LHS is going left then
-down in the diagram corresponding to the previous one. -/
-theorem nat_in_A_nattFA {C: Cat} {F: Fun C SetCat} {A B : C.Obj} (f : C.Hom A B) (η : Natt (Rep_cov A) F) :
+
+
+def i A : A → A := fun x => x
+
+theorem id_comp_either {U : Type u} (h : U → U) :
+(i U) ∘ h = h ∘ (i U) := by
+rfl
+
+/-The following expresses naturality in A of the assignment in the other direction
+to our previous result, using the above lemma. Note that this can be done by hand
+using f_on_eta directly, of course.-/
+
+theorem nat_in_A_nattFA {C: Cat} {F: Fun C SetCat} {A B :C.Obj} (f: C.Hom A B) (η: Natt (Rep_cov A) F) :
+ (F.Fmor f) (natt_to_FA A η) = natt_to_FA (B) (f_on_eta f η) := by
+  have co :=
+  --have i : (Natt (Rep_cov A) F) → (Natt (Rep_cov A) F) := fun z => (Yoneda_ntn_id A z)
+  --have co := congrFun (Yoneda_ntn_id A)
+  --have co := congrFun (Yoneda_ntn_id A) (f_on_eta f)
+  --have h := two_of_three_squares_hisos.{0,1} (FA_to_natt A) (natt_to_FA A) (f_on_eta f) (congrArg (Yoneda_ntn_id) (f_on_eta f)) (nat_in_A_FA f) (Yoneda_ntn_id A)
