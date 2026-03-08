@@ -111,6 +111,7 @@ theorem Yoneda_ntn_id {C: Cat} (A: C.Obj) {F: Fun C SetCat} (η : Natt (Rep_cov 
      simp only [C.id_comp] at h_applied
      exact h_applied.symm
 
+
 --Below expresses that the composition of the above from FA to FA is the identity
 theorem Yoneda_iti_id {C: Cat} (A:C.Obj) {F: Fun C SetCat} (a: F.Fobj A):
   ((natt_to_FA) A) (FA_to_natt A a) = a := by
@@ -190,21 +191,35 @@ v_1 ∘ g_1 = g_2 ∘ v_2 := by
   exact l
 
 
+/-In order to apply the above properly we will rephrase the nature of the pieces of the Yoneda theorem
+already established, essentially just doing a λ-abstraction to make types all work out. -/
+
+
+/-Rephrases Yoneda_ntn_id to actually give an equality of function terms so that we can use id_comp_either
+applied with congrFun or congrArg, forget which, to get co, our outer commuting diagram. We should be able
+do a similar thing for our ci, the lefthand commuting square, and the last piece, id_t, should be exactly
+our rephrased Yoneda_iti_id guy.-/
 
 
 def i A : A → A := fun x => x
 
-theorem id_comp_either {U : Type u} (h : U → U) :
-(i U) ∘ h = h ∘ (i U) := by
+theorem id_comp_either {X Y : Type u} (h : X → Y) :
+(i Y) ∘ h = h ∘ (i X) := by
 rfl
 
 /-The following expresses naturality in A of the assignment in the other direction
 to our previous result, using the above lemma. Note that this can be done by hand
-using f_on_eta directly, of course.-/
+using f_on_eta directly, of course.
+
+The way we currently have it does require that we massage things a little bit, rephrasing some
+previous results as having assignments/doing some Currying essentially.-/
 
 theorem nat_in_A_nattFA {C: Cat} {F: Fun C SetCat} {A B :C.Obj} (f: C.Hom A B) (η: Natt (Rep_cov A) F) :
  (F.Fmor f) (natt_to_FA A η) = natt_to_FA (B) (f_on_eta f η) := by
-  have co :=
+  have f_precomp : (Natt (Rep_cov A) F) → (Natt (Rep_cov B) F) := fun γ => f_on_eta f γ
+  have co_1 := id_comp_either f_precomp
+  have Yon_ntn_top :=
+  rw [Yoneda_ntn_id] at co_1
   --have i : (Natt (Rep_cov A) F) → (Natt (Rep_cov A) F) := fun z => (Yoneda_ntn_id A z)
   --have co := congrFun (Yoneda_ntn_id A)
   --have co := congrFun (Yoneda_ntn_id A) (f_on_eta f)
