@@ -111,6 +111,7 @@ theorem Yoneda_ntn_id {C: Cat} (A: C.Obj) {F: Fun C SetCat} (η : Natt (Rep_cov 
      simp only [C.id_comp] at h_applied
      exact h_applied.symm
 
+
 --Below expresses that the composition of the above from FA to FA is the identity
 theorem Yoneda_iti_id {C: Cat} (A:C.Obj) {F: Fun C SetCat} (a: F.Fobj A):
   ((natt_to_FA) A) (FA_to_natt A a) = a := by
