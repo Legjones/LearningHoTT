@@ -149,13 +149,14 @@ F(f) |    | (precomp with f)
      v    v
    F(B) → γ
 -/
-theorem nat_in_A_FA {C: Cat} {F: Fun C SetCat} {A B :C.Obj} {a : F.Fobj A} (f : C.Hom A B):
+theorem nat_in_A_FA {C: Cat} {F: Fun C SetCat} {A B :C.Obj} (a : F.Fobj A) (f : C.Hom A B):
    (f_on_eta f) (FA_to_natt A a) = (FA_to_natt B) ((F.Fmor f) a) := by
    ext c
    simp only [FA_to_natt, f_on_eta]
    simp only [F.Fcomp]
    simp only [SetCat]
    rfl
+
 
 
 /-The following is expressing that if we have some diagram of the form
@@ -172,8 +173,8 @@ Note also that our explicit assumptions below are just that the outer rectangle
 commutes, co, our inner left square commutes, ci, and the reverse composition of our
 top two morphisms is the identity, i.e. this pair forms a split epimorphism.-/
 
-theorem two_of_three_squares_hisos {X_1 Y_1 : Type u} {X_2 Y_2 : Type v} (f_1 : X_1 → Y_1) (g_1 : Y_1 → X_1) {f_2 : X_2 → Y_2} {g_2 : Y_2 → X_2} (v_1 : X_1 → X_2) {v_2 : Y_1 → Y_2}
-(co :(v_1 ∘ g_1 ∘ f_1) = (g_2 ∘ f_2 ∘  v_1)) (ci : v_2 ∘ f_1 = f_2 ∘ v_1) (id_t : f_1 ∘ g_1 = (fun x =>x)) :
+theorem two_of_three_squares_hsplit {X_1 : Type q} {Y_1 : Type r} {X_2 : Type s} {Y_2 : Type t} (f_1 : X_1 → Y_1) (g_1 : Y_1 → X_1) (f_2 : X_2 → Y_2) (g_2 : Y_2 → X_2) (v_1 : X_1 → X_2) (v_2 : Y_1 → Y_2)
+(co :(v_1 ∘ g_1 ∘ f_1) = (g_2 ∘ f_2 ∘ v_1)) (ci : v_2 ∘ f_1 = f_2 ∘ v_1) (id_t : f_1 ∘ g_1 = (fun x => x)) :
 v_1 ∘ g_1 = g_2 ∘ v_2 := by
   funext z
   have l := congrFun co (g_1 z)
@@ -192,20 +193,58 @@ v_1 ∘ g_1 = g_2 ∘ v_2 := by
 
 
 
-def i A : A → A := fun x => x
+def i (A : Type _) : A → A := fun x => x
 
-theorem id_comp_either {U : Type u} (h : U → U) :
-(i U) ∘ h = h ∘ (i U) := by
+theorem id_comp_either {X : Type u} {Y: Type v} (h : X → Y) :
+(i Y) ∘ h = h ∘ (i X) := by
 rfl
 
 /-The following expresses naturality in A of the assignment in the other direction
 to our previous result, using the above lemma. Note that this can be done by hand
-using f_on_eta directly, of course.-/
+using f_on_eta directly, of course, and would in fact be (much) shorter. We just wanted
+to have some fun with it/try getting more practice.
 
-theorem nat_in_A_nattFA {C: Cat} {F: Fun C SetCat} {A B :C.Obj} (f: C.Hom A B) (η: Natt (Rep_cov A) F) :
- (F.Fmor f) (natt_to_FA A η) = natt_to_FA (B) (f_on_eta f η) := by
-  have co :=
-  --have i : (Natt (Rep_cov A) F) → (Natt (Rep_cov A) F) := fun z => (Yoneda_ntn_id A z)
-  --have co := congrFun (Yoneda_ntn_id A)
-  --have co := congrFun (Yoneda_ntn_id A) (f_on_eta f)
-  --have h := two_of_three_squares_hisos.{0,1} (FA_to_natt A) (natt_to_FA A) (f_on_eta f) (congrArg (Yoneda_ntn_id) (f_on_eta f)) (nat_in_A_FA f) (Yoneda_ntn_id A)
+The way we currently have it does require that we massage things a little bit, rephrasing some
+previous results as having assignments/doing some Currying essentially. These comprise the
+first few lines.-/
+
+def itn_fun_A {C: Cat} (A:C.Obj) {F: Fun C SetCat} : F.Fobj A → (Natt (Rep_cov A) F) :=
+fun a => (FA_to_natt A a)
+
+def nti_fun_A {C: Cat} (A:C.Obj) {F: Fun C SetCat} : (Natt (Rep_cov A) F) → F.Fobj A :=
+fun η => (natt_to_FA A η)
+
+theorem Yoneda_iti_fun {C:Cat} (A:C.Obj) {F:Fun C SetCat} : nti_fun_A A ∘ itn_fun_A A = i (F.Fobj A) := by
+  funext a
+  dsimp
+  simp only [itn_fun_A, nti_fun_A]
+  exact Yoneda_iti_id A a
+
+theorem Yoneda_ntn_fun {C: Cat} (A:C.Obj) (F: Fun C SetCat) : itn_fun_A A ∘ nti_fun_A A = i (Natt (Rep_cov A) F) := by
+  funext η
+  dsimp
+  simp only [itn_fun_A, nti_fun_A]
+  exact Yoneda_ntn_id A η
+
+
+def f_precomp {C: Cat} {A B:C.Obj} {F: Fun C SetCat} (f: C.Hom A B) : (Natt (Rep_cov A) F) → (Natt (Rep_cov B) F) :=
+fun γ => f_on_eta f γ
+
+theorem nat_in_A_FA_fun {C:Cat} (F: Fun C SetCat) {A B : C.Obj}  (f : C.Hom A B) : (f_precomp f) ∘ (itn_fun_A A) = (itn_fun_A B) ∘ (F.Fmor f) := by
+  funext a
+  let h := nat_in_A_FA a f
+  dsimp
+  exact h
+
+
+theorem nat_in_A_nattF_fun {C: Cat} {F:Fun C SetCat} {A B: C.Obj} (f: C.Hom A B) : (F.Fmor f) ∘ (nti_fun_A A) = (nti_fun_A B) ∘ (f_precomp f) := by
+  let co := (id_comp_either (F.Fmor f))
+  rw [←  Yoneda_iti_fun A, ← Yoneda_iti_fun B] at co
+  symm at co
+  let ci := (nat_in_A_FA_fun F f)
+  let id_t := Yoneda_ntn_fun A F
+  unfold i at id_t
+  have fin := two_of_three_squares_hsplit (itn_fun_A A) (nti_fun_A A) (itn_fun_A B) (nti_fun_A B) (F.Fmor f) (f_precomp f) co ci id_t
+  exact fin
+
+--Victory
