@@ -140,8 +140,12 @@ def contrToSingleton.{u₁, u₂} {α : Type u₁} {a : α}
 -- Direction ⇐: Singleton induction implies contractible
 -- We apply singleton induction to B(x) := PLift (a = x).
 def singletonToContr {α : Type u} {a : α}
-    (sing : IsSingleton.{u, 0} a) : IsContr α :=
-  sorry
+    (sing : IsSingleton.{u, 0} a) : IsContr α := by
+  let B := fun x:α => PLift (a=x)
+  let c := (sing B).inv (PLift.up rfl)
+  exact ⟨a , fun x => (c x).down⟩
+  --The above is not mine
+
 
 
 -- ============================================================================
