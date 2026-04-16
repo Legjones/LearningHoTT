@@ -330,7 +330,14 @@ structure IsRetractOf (α : Type u) (β : Type v) where
 
 def isContrRetractOf {α : Type u} {β : Type v}
     (r : IsRetractOf α β) (hB : IsContr β) : IsContr α :=
-  sorry
+{
+  center := r.retract (hB.center)
+  contraction := by
+    intro a
+    let e := hB.contraction (r.section_ a)
+    rw [e]
+    exact r.isRetr a
+}
 
 -- Contractible types are closed under equivalences
 def isContrOfEquiv {α : Type u} {β : Type v}
@@ -344,16 +351,55 @@ def isContrOfEquiv' {α : Type u} {β : Type v}
 -- Any map between contractible types is an equivalence
 def isEquivOfIsContr {α : Type u} {β : Type v}
     (f : α → β) (hA : IsContr α) (hB : IsContr β) : IsEquiv f :=
-  sorry
+    let g: β → α := fun x => hA.center
+{
+  sec :=
+    {
+      inv := g
+      rightInv := by
+        intro b
+        rw [← hA.contraction (g b)]
+        rw [← hB.contraction (f hA.center)]
+        exact hB.contraction b
+    }
+  retr :=
+    {
+      inv := g
+      leftInv := by
+        intro a
+        rw [← hB.contraction (f a)]
+        rw [← hA.contraction (g hB.center)]
+        exact hA.contraction a
+    }
+}
 
 def equivOfIsContr {α : Type u} {β : Type v}
     (hA : IsContr α) (hB : IsContr β) : α ≃ β :=
-  sorry
+    let f: α → β := fun _ => hB.center
+{
+  toFun := f
+  isEquiv := isEquivOfIsContr f hA hB
+}
 
 -- Contractibility of Σ-types
 def isContrSigma {α : Type u} {B : α → Type v}
     (hA : IsContr α) (hB : IsContr (B hA.center)) : IsContr (Σ x, B x) :=
-  sorry
+{
+  center := ⟨hA.center, hB.center⟩
+  contraction := by
+    intro sgm
+    let s1eq := hA.contraction sgm.1
+    let s2typed :=  (congrArg B s1eq) ▸ sgm.2
+    let s2eq := (hB.contraction s2typed)
+    have eq := congrArg (fun t => (⟨hA.center, t⟩ : Sigma B)) s2eq
+    simp [s2eq, s2typed]
+    sorry
+
+    --let c := Sigma.mk hA.center hB.center
+    --exact Sigma.ext s1eq (s2eq ▸
+}
+--The above game me a lot of headaches... issues of transporting types and such, dealing
+-- with Sigma types...
 
 def isContrSigma' {α : Type u} {B : α → Type v}
     (hA : IsContr α) (hB : ∀ x, IsContr (B x)) : IsContr (Σ x, B x) :=
@@ -367,7 +413,14 @@ def isPropIsContr {α : Type u} (h : IsContr α) (x y : α)
 -- Products of families of contractible types are contractible
 def isContrPi {α : Type u} {B : α → Type v}
     (hB : ∀ x, IsContr (B x)) : IsContr ((x : α) → B x) :=
-  sorry
+{
+  center := fun x => (hB x).center
+  contraction := by
+    intro f
+    apply funext
+    intro a
+    exact (hB a).contraction (f a)
+}
 
 def isContrFunctionType {α : Type u} {β : Type v}
     (hB : IsContr β) : IsContr (α → β) :=
@@ -375,7 +428,16 @@ def isContrFunctionType {α : Type u} {β : Type v}
 
 -- Being contractible is itself contractible (when it holds)
 def isContrIsContr {α : Type u} (h : IsContr α) : IsContr (IsContr α) :=
-  sorry
+{
+  center := h
+  contraction := by
+    intro i
+    cases h with | mk a c => cases i with | mk q k =>
+      exact (c q)
+      have f := (k a)
+      sorry
+-- This is also giving me a lot of trouble
+}
 
-theorem isPropIsContr' {α : Type u} (h k : IsContr α) : h = k :=
-  sorry
+theorem isPropIsContr' {α : Type u} (h k : IsContr α) : h = k := by
+  exact (isContrIsContr h).contraction k
