@@ -140,8 +140,12 @@ def contrToSingleton.{u₁, u₂} {α : Type u₁} {a : α}
 -- Direction ⇐: Singleton induction implies contractible
 -- We apply singleton induction to B(x) := PLift (a = x).
 def singletonToContr {α : Type u} {a : α}
-    (sing : IsSingleton.{u, 0} a) : IsContr α :=
-  sorry
+    (sing : IsSingleton.{u, 0} a) : IsContr α := by
+  let B := fun x:α => PLift (a=x)
+  let c := (sing B).inv (PLift.up rfl)
+  exact ⟨a , fun x => (c x).down⟩
+  --The above is not mine
+
 
 
 -- ============================================================================
@@ -156,6 +160,7 @@ def Fib {α : Type u} {β : Type v} (f : α → β) (b : β) := PSigma (fun a =>
 theorem fib_eq {α : Type u} {β : Type v} {f : α → β} {b : β} {s t : Fib f b}
     (h : s.1 = t.1) : s = t := by
   cases s with | mk a p => cases t with | mk a' q => simp at h; subst h; rfl
+--I want to understand better what is going on in the above!
 
 
 -- ============================================================================
@@ -168,10 +173,26 @@ def IsContrMap {α : Type u} {β : Type v} (f : α → β) := ∀ b, IsContr (Fi
 -- Theorem: Any contractible map is an equivalence
 def isEquivOfContrMap {α : Type u} {β : Type v} {f : α → β}
     (cf : IsContrMap f) : IsEquiv f :=
-  IsEquiv.ofInverse
-    sorry
-    sorry
-    sorry
+{
+  sec :=
+  {
+    inv :=
+      fun b => (((cf) b).center).1
+    rightInv := by
+      intro b
+      exact ((cf b).center).2
+  }
+  retr :=
+  {
+    inv :=
+      fun b => (((cf) b).center).1
+    leftInv := by
+      intro a
+      let g := ((cf (f a)).contraction ⟨a, rfl⟩)
+      exact congrArg (fun x : Fib f (f a) => x.1) g
+  }
+}
+
 
 
 -- ============================================================================
@@ -199,7 +220,14 @@ def HasInverse.ofIsEquiv {f : α → β} (e : IsEquiv f) : HasInverse f :=
   let H := e.retr.leftInv
   { inv  := g
     rinv := G
-    linv := sorry }
+    linv := by
+      intro a
+      let r := H (g (f a))
+      rw [G] at r
+      rw [H] at r
+      symm at r
+      exact r
+  }
 
 def IsCohInvertible.ofHasInverse {f : α → β} (h : HasInverse f)
     : IsCohInvertible f :=
@@ -222,7 +250,23 @@ def IsCohInvertible.ofIsEquiv {f : α → β} (e : IsEquiv f)
 -- Under UIP, the coherence is automatic.
 def isContrMapOfCohInvertible {α : Type u} {β : Type v} {f : α → β}
     (ci : IsCohInvertible f) : IsContrMap f :=
-  sorry
+    let g:= ci.inv
+    let G:= ci.rinv
+    let H:= ci.linv
+    let K:= ci.coherence
+    fun b =>
+    {
+      center :=  ⟨g b, G b⟩
+      contraction := by
+        intro c
+        apply fib_eq
+        dsimp
+        let s := (congrArg g c.2).symm
+        let t := (H c.1)
+        exact Eq.trans s t
+    }
+--I didn't really need to use that f was coherently invertible... where would I have
+--used it were I using Agda, say?
 
 -- The full chain: is-equiv → has-inverse → is-coh-invertible → is-contr-map
 def isContrMapOfIsEquiv {α : Type u} {β : Type v} {f : α → β}
@@ -238,11 +282,37 @@ def isContrTotalPath'ViaEquiv (a : α) : IsContr (Fib id a) :=
 -- A type is contractible iff it is equivalent to Unit
 -- ============================================================================
 
+--As a preliminary, we show that any map between contractible space is contractible
+def bwContrisContrmap {α : Type u} {β : Type v} (h : IsContr α) (k : IsContr β) (f : α → β) :
+IsContrMap f := fun b =>
+{
+  center := ⟨h.center, Eq.trans (k.contraction (f h.center)).symm (k.contraction b) ⟩
+  contraction := by
+    intro x
+    apply fib_eq
+    exact (h.contraction x.1)
+}
+
+
 def equivUnitOfIsContr {α : Type u} (h : IsContr α) : α ≃ Unit :=
-  sorry
+{
+  toFun := fun _ => ()
+  isEquiv := isEquivOfContrMap (bwContrisContrmap h isContrUnit (fun _ => ()))
+}
+
+
 
 def isContrOfEquivUnit {α : Type u} (e : α ≃ Unit) : IsContr α :=
-  sorry
+{
+  center := ((HasInverse.ofIsEquiv e.isEquiv).inv ())
+  contraction := by
+    intro a
+    let g := (HasInverse.ofIsEquiv e.isEquiv).inv
+    let f := e.toFun
+    let r := congrArg f ((HasInverse.ofIsEquiv e.isEquiv).linv a)
+    let v := congrArg g r
+    exact (HasInverse.ofIsEquiv e.isEquiv).linv a
+}
 
 
 -- ============================================================================
