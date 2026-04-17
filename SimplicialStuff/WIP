@@ -1,0 +1,71 @@
+module
+
+public import Mathlib.AlgebraicTopology.SimplicialSet.Horn
+public import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplex
+public import Mathlib.Analysis.Convex.Combination
+public import Mathlib.Analysis.Convex.PathConnected
+public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
+public import Mathlib.Topology.UnitInterval
+
+open Set Convex Bornology
+
+def horn_retract_of_standard (n : ℕ) (i : Fin (n + 1)) : (Δ[n]) ⟶  (horn n i) := by
+  cases n with
+    | zero =>
+    | succ => sorry
+
+section OrderedSemiring
+
+--JUST TRY MAKING BBK BBR INSTEAD...
+--Note that we are assuming bbk is a linear order, not a partial order
+variable (𝕜) (ι : Type*) [Semiring 𝕜] [LinearOrderedRing 𝕜] [Fintype ι]
+
+
+def stdSimplex : Set (ι → 𝕜) :=
+  { f | (∀ x, 0 ≤ f x) ∧ ∑ x, f x = 1 }
+
+--This is expressing the topological horn i on the standard simplex that should be okay...
+def stdSimplex_horn_i (i : ι) : Set (ι → 𝕜) :=
+  {f | (∀ x, 0 ≤ f x) ∧ ∑ x, f x = 1 ∧ (f i > 0) ∧ (∃ y: ι, y ≠ i ∧ f y = 0)}
+  ∪ {f | ∑ x, f x = 1 ∧ (∃ z, f z = 1)}
+
+def whenkdecidableeq (ι) : DecidableEq ι := by
+  sorry
+
+noncomputable def minOther (i:ι) (f : ι → 𝕜) : 𝕜 := by
+  intros
+  let hs : Finset ι := Finset.univ.erase i
+
+--Below is not mine but might be useful for some tools/ideas I may need...
+noncomputable def minOther (i : ι) (f : ι → ℝ) : ℝ :=
+by
+  classical
+  let s : Finset ι := Finset.univ.erase i
+  have hs : s.Nonempty := by
+    rcases exists_ne i with ⟨j, hj⟩
+    exact ⟨j, by simp [s, hj]⟩
+  exact s.min' hs f
+
+noncomputable def hornRetractionAmbient (i : ι) : (ι → ℝ) → (ι → ℝ) :=
+  fun f j =>
+    let m := minOther (ι := ι) i f
+    if hj : j = i then
+      f i + ((Finset.univ.erase i).card : ℝ) * m
+    else
+      f j - m
+
+def horn_retrat_ofstdSimplex (j : ι) : stdSimplex → (stdSimplex_horn_i j)
+
+
+
+def stdSimplex : Set (ι → 𝕜) :=
+  { f | (∀ x, 0 ≤ f x) ∧ ∑ x, f x = 1 }
+
+
+--def horn (n : ℕ) (i : Fin (n + 1)) : (Δ[n] : SSet.{u}).Subcomplex where
+--obj _ := setOf (fun s ↦ Set.range (stdSimplex.asOrderHom s) ∪ {i} ≠ Set.univ)
+--map φ s hs h := hs (by
+--  rw [Set.eq_univ_iff_forall] at h ⊢; intro j
+--  apply Or.imp _ id (h j)
+--  intro hj
+--  exact Set.range_comp_subset_range _ _ hj)
