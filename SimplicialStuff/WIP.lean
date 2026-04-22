@@ -1,19 +1,23 @@
 import Mathlib.AlgebraicTopology.SimplicialSet.Horn
 import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplex
-import Mathlib.Analysis.Convex.Combination
-import Mathlib.Analysis.Convex.PathConnected
-import Mathlib.Topology.Algebra.Monoid.FunOnFinite
-import Mathlib.Topology.UnitInterval
-import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplex
 import Mathlib.AlgebraicTopology.TopologicalSimplex
 import Mathlib.CategoryTheory.Limits.Presheaf
 import Mathlib.Topology.Category.TopCat.Limits.Basic
 import Mathlib.Topology.Category.TopCat.ULift
 
+/--
+WARNING!!!
+
+The idea of the below is a bit wrong, in that we won't be able to write a retraction
+on the level of simplicial sets (otherwise everything would be a Kan complex) but we can
+after geometric realization. This is where we should try to demonstrate the retraction,
+in the language of the geometric realization of the simplicial horns and standard
+n-simplices directly (instead of another model for the geometric horns and n-simplices).
+-/
 
 universe u
 
-open Set Convex Bornology Simplicial CategoryTheory.Functor CategoryTheory SSet Subcomplex
+open Set Simplicial CategoryTheory SSet Subcomplex
 
 --The retract, as simplicial sets, of the standard simplex to its horns
 def horn_retract_frm_std (n : ℕ) (i : Fin (n + 1)) : NatTrans Δ[n] Λ[n,i] :=
