@@ -387,16 +387,14 @@ def isContrSigma {α : Type u} {B : α → Type v}
 {
   center := ⟨hA.center, hB.center⟩
   contraction := by
-    intro sgm
-    let s1eq := hA.contraction sgm.1
-    let s2typed :=  (congrArg B s1eq) ▸ sgm.2
-    let s2eq := (hB.contraction s2typed)
-    have eq := congrArg (fun t => (⟨hA.center, t⟩ : Sigma B)) s2eq
-    simp [s2eq, s2typed]
-    sorry
+    rintro ⟨x, y⟩
 
-    --let c := Sigma.mk hA.center hB.center
-    --exact Sigma.ext s1eq (s2eq ▸
+    have p:= hA.contraction x
+    apply Sigma.ext
+    exact p
+    subst p
+    have q:= hB.contraction y
+    simp only [heq_eq_eq, q]
 }
 --The above game me a lot of headaches... issues of transporting types and such, dealing
 -- with Sigma types...
@@ -431,7 +429,8 @@ def isContrIsContr {α : Type u} (h : IsContr α) : IsContr (IsContr α) :=
 {
   center := h
   contraction := by
-    intro i
+    rintro ⟨x, X⟩
+
     cases h with | mk a c => cases i with | mk q k =>
       exact (c q)
       have f := (k a)
